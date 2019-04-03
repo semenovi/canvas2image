@@ -34,6 +34,10 @@ var Canvas2Image = function () {
 		var retCtx = retCanvas.getContext('2d');
 		retCanvas.width = width;
 		retCanvas.height = height;
+		retCtx.imageSmoothingEnabled = false;
+		retCtx.mozImageSmoothingEnabled = false;
+		retCtx.msImageSmoothingEnabled = false;
+		retCtx.webkitImageSmoothingEnabled = false;
 		retCtx.drawImage(canvas, 0, 0, w, h, 0, 0, width, height);
 		return retCanvas;
 	}
@@ -43,8 +47,14 @@ var Canvas2Image = function () {
 		return canvas.toDataURL(type);
 	}
 
-	function saveFile (strData) {
-		document.location.href = strData;
+	function saveFile (strData, name) {
+		var link = document.createElement("a");
+		link.download = name;
+		link.href = strData;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		delete link;
 	}
 
 	function genImage(strData) {
@@ -197,7 +207,24 @@ var Canvas2Image = function () {
 	 * @param {Number} [optional] png width
 	 * @param {Number} [optional] png height
 	 */
-	var saveAsImage = function (canvas, width, height, type) {
+	var saveAsImage = function (canvas, width, height, type, name, smoothing) {
+		if (smoothing)
+		{
+			var retCtx = canvas.getContext('2d');
+			retCtx.imageSmoothingEnabled = true;
+			retCtx.mozImageSmoothingEnabled = true;
+			retCtx.msImageSmoothingEnabled = true;
+			retCtx.webkitImageSmoothingEnabled = true;
+		}
+		else
+		{
+			var retCtx = canvas.getContext('2d');
+			retCtx.imageSmoothingEnabled = false;
+			retCtx.mozImageSmoothingEnabled = false;
+			retCtx.msImageSmoothingEnabled = false;
+			retCtx.webkitImageSmoothingEnabled = false;
+
+		}
 		if ($support.canvas && $support.dataURL) {
 			if (typeof canvas == "string") { canvas = document.getElementById(canvas); }
 			if (type == undefined) { type = 'png'; }
@@ -205,10 +232,10 @@ var Canvas2Image = function () {
 			if (/bmp/.test(type)) {
 				var data = getImageData(scaleCanvas(canvas, width, height));
 				var strData = genBitmapImage(data);
-				saveFile(makeURI(strData, downloadMime));
+				saveFile(makeURI(strData, downloadMime), name);
 			} else {
 				var strData = getDataURL(canvas, type, width, height);
-				saveFile(strData.replace(type, downloadMime));
+				saveFile(strData.replace(type, downloadMime), name);
 			}
 		}
 	};
@@ -234,8 +261,8 @@ var Canvas2Image = function () {
 
 	return {
 		saveAsImage: saveAsImage,
-		saveAsPNG: function (canvas, width, height) {
-			return saveAsImage(canvas, width, height, 'png');
+		saveAsPNG: function (canvas, width, height, name, smoothing) {
+			return saveAsImage(canvas, width, height, 'png', name, smoothing);
 		},
 		saveAsJPEG: function (canvas, width, height) {
 			return saveAsImage(canvas, width, height, 'jpeg');
